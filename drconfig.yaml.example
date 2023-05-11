@@ -1,0 +1,6 @@
+token: yourtoken
+endpoint: https://app.datarobot.com/api/v2
+# endpoint: https://app2.datarobot.com/api/v2
+# You may need to uncomment line 5 below if you are connecting through a VPN.
+# We recommend you disconnect from the VPN to be most successful in class though
+# ssl_verify: false
