@@ -4,11 +4,6 @@ from io import StringIO
 # import asyncio
 from dataclasses import dataclass
 
-from multiprocessing.dummy import Pool
-
-pool = Pool(10)
-
-import requests
 import pandas as pd
 import numpy as np
 
@@ -19,14 +14,6 @@ import mediapipe as mp
 import subprocess
 
 
-def dispatch_webook(url):
-    pool.apply_async(requests.get, [url])
-
-
-red = "https://hooks.nabu.casa/gAAAAABiDlv9RyMDk4TirYylrEMgFnfWt0qqyMCeYSwqkneDm8kUf7NpnAhr4DWON79pviOnIBJDZfb-t48uVyg_h2SFgB0V4OrvZW3a0HxjhMwaLherYuW4gQLqXhbFmgFn5rlMwkdUIRq3CNK1PApwId0_yajI3feqS3olYc_Ahhl5w0N8TOQ="
-green = "https://hooks.nabu.casa/gAAAAABiDlyh0dNJBGxKbOjlhtQzWjZnt5_JCKog5iNJoBLyPTVjbYqk1t1pGbJfszoZt3m1bG2ZdX_eTFzcgKHFtPfZxYjBJm0rsOVaOS5yqoplVpi8EMxvKS09ZoZT37ySRRyENfDy9wFedKxK4BxvfpM3Vk-BXP3FRx14cSJ7ipG0hNT_9Cg="
-blue = "https://hooks.nabu.casa/gAAAAABiDlytufhxhvC2h7FakiFyjdE7LvQ5nk-_lYjB-Qv1-QXme_fzQocttRC46XX9g3dbu6cnV8YYb-blrDyMTD8S7_XneRa557z7rIwXUENHDAwQmEjUBQDAxsfL2o730DjxBWzn2KV_WJHlow_XsAOgIkHsFXO4W6fqbuA_avjQUWThtu0="
-white = "https://hooks.nabu.casa/gAAAAABiDl58FfHR6zEdcCxgu08N02omrBKbKsL9JsecjJD2o2LgG6XMDeeFXk_Xq7R0ulRYg5v477QnOCZDQqlcsPS8KJG39R--Bs-I8thJR5Vpi-3e9kIrYzE8FYvNMaGGoYl2Dac6E8Dfp_iy8JRLNxCfMhCnOCmALDK1MYhvsfp1D4nx_7M="
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
@@ -57,8 +44,7 @@ def dispatch_prediction(df, label=l, choices=["OK", "horns", "none", "peace", "s
         [
             "java",
             "-jar",
-            # "/Users/zach.ingbretsen/old_downloads/63b45a070797080725e40522-63b44b69324b6d75284d9225.jar",
-            "/Users/zach.ingbretsen/Documents/projects/hands/645bc81610a88465780f31ee-645bc4ea81a542c31b6413c2.jar",
+            "645bc81610a88465780f31ee-645bc4ea81a542c31b6413c2.jar",
             "csv",
             "--input=-",
             "--output=-",
@@ -68,7 +54,6 @@ def dispatch_prediction(df, label=l, choices=["OK", "horns", "none", "peace", "s
     )
     df = pd.read_csv(StringIO(out.stdout.decode()))
     label.label = df.apply(lambda row: choices[np.argmax(row)], axis=1).iat[0]
-    # return df.apply(lambda row: choices[np.argmax(row)], axis=1).iat[0]
 
 
 def main():
@@ -93,7 +78,6 @@ def main():
             if results.multi_hand_landmarks:
                 # for hand_landmarks in results.multi_hand_landmarks:
                 hand_landmarks = results.multi_hand_landmarks[0]
-                print(hand_landmarks)
                 mp_drawing.draw_landmarks(
                     image,
                     hand_landmarks,
@@ -117,14 +101,14 @@ def main():
                 landmarks = hand.landmark
                 height = 1080
                 width = 1920
+                v_offset = 100
                 x = list(chain.from_iterable([[nl.x] for nl in landmarks]))
                 y = list(chain.from_iterable([[nl.y] for nl in landmarks]))
                 z = list(chain.from_iterable([[nl.z] for nl in landmarks]))
                 coords = (sum(x)/len(x), max(y), sum(z)/len(z))
-                scaled_coords = [int(coords[0] * width), 30+int(coords[1] * height), coords[2]]
-                print(coords)
-                print(scaled_coords)
-                print(scaled_coords[:2])
+                scaled_coords = [int(coords[0] * width),
+                                 v_offset + int(coords[1] * height)]
+                print(scaled_coords[-1])
 
                 cv2.putText(
                     image,
@@ -137,16 +121,6 @@ def main():
                     lineType,
                 )
             print(l_prev.label, l.label)
-            if l.label != l_prev.label:
-                if l.label == "peace":
-                    dispatch_webook(red)
-                elif l.label == "thumbsup":
-                    dispatch_webook(blue)
-                elif l.label == "spock":
-                    dispatch_webook(green)
-                elif l.label == "none":
-                    dispatch_webook(white)
-
 
             cv2.imshow("img", image)
 
